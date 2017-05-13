@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""
-Module implementing MainWindow.
-"""
-
+# MTTT UI implementation
+# Work in progress, inmense room for improvement ;-)
+# Authors: MLemos, PEstrella
+# 
+import textwrap
 from PyQt4.QtCore import (
     pyqtSignature,
     QObject,
@@ -11,8 +12,6 @@ from PyQt4.QtCore import (
     SIGNAL,
     QUrl,
     )
-
-#from PyQt4 import QtCore
 
 from PyQt4.QtGui import (
     QMainWindow,
@@ -22,9 +21,11 @@ from PyQt4.QtGui import (
     QFileDialog,
     QTextEdit,
     QColor,
+    QHeaderView,
+    QTableWidgetItem,
     QAbstractItemView,
     )
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 import sys
 import time
 import threading
@@ -32,15 +33,11 @@ import shutil
 import codecs
 
 from Ui_mainWindow import Ui_MainWindow
-from credits import DlgCredits
 from util import doAlert
-
-
 from table import MyTable
 
 
 from migrated_backend_main import *
-from statistics_module import Statistics
 from differences_module import Differences
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -62,6 +59,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
            self.setStyleSheet(QtCore.QVariant(css.readAll()).toString())
         css.close()
 
+        self.modified_table_items_coordinates = []
+        self.lastChangedTableItemCoordinates = (-1,-1)
 
         self.post_editing_data = {}
         self.differences_data = {}
@@ -72,48 +71,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.last_changed_item_in_post_edition = None
         self.last_selected_search = None
         self.log = {}
-        self.statistics = None
+        #self.statistics = None
         self.differences = None
-        shutil.rmtree("./statistics/generated", ignore_errors=True)
-        os.makedirs("./statistics/generated")
-        shutil.rmtree("./saved", ignore_errors=True)
-        os.makedirs("./saved")
         self.engine = None
         self.progress = None
         self.workdir = workdir
+        self.chooseModel = None
         self.migrated_backend_main = MyWindow()
 
 
     @pyqtSignature("")
     def on_btnMachineTranslation_clicked(self):
+        
         source = self.edit_source_machine_translation_tab.text()
         if not source:
             doAlert("Please choose a source text first.")
             return
-        text = self.migrated_backend_main._machine_translation(source).decode('utf8')
+        text = self.migrated_backend_main._machine_translation(source, self.chooseModel).decode('utf8')
         self.results_machine_translation.setText(text)
 
     @pyqtSignature("")
-    def on_btnChooseLM_clicked(self):
-        self.edit_output_preprocessing_tab.setText(str(QFileDialog.getExistingDirectory(self, "Select Directory")))
+    def on_btnChooseTM_clicked(self):
+        #self.chooseModel= str(QFileDialog.getExistingDirectory(self, "Select Translation Model"))
+        self.chooseModel.setText(str(self.directoryDialog()))       
 
     @pyqtSignature("")
-    def on_btnCreateLM_clicked(self):
+    def on_btnCreateTM_clicked(self):
         self.tabWidget.setCurrentIndex(0)
-
-    def showDiffs(self):
-        self.table_offset_Differences = 0
-        self.update_table_Differences()
-        self.btnNextDifferences.show()
-        self.btnBackDifferences.show()
-        self.btnAddRowsDifferences.show()
-        self.btnLessRowsDifferences.show()
-        self.table_differences.show()
 
     @pyqtSignature("")
     def on_btnPostEditing_clicked(self):
         source = self.edit_source_post_editing.text()
+        #print source
         target = self.edit_target_post_editing.text()
+        #print target
         output = self.edit_output_post_editing.text()
         if not source and self.btn_bilingual_post_edition.isChecked():
             doAlert("Please choose a source text first.")
@@ -124,36 +115,70 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not output:
             doAlert("Please choose an output directory first.")
             return
-
-        self.table_post_editing.show()
-
+       
+        
         self.source_text = []
         self.unchanged_target_text = []
         self.target_text = []
-        if self.btn_bilingual_post_edition.isChecked():
 
-            with open(source) as fp:
-                    for line in fp:
-                        line = line.decode("utf-8")
-                        if line != '\n':
-                           self.source_text.append(line)
         with open(target) as fp:
                 for line in fp:
                     line = line.decode("utf-8")
                     if line != '\n':
                        self.unchanged_target_text.append(line)
                        self.target_text.append(line)
+        if self.btn_bilingual_post_edition.isChecked():
+            with open(source) as fp:
+                    for line in fp:
+                        line = line.decode("utf-8")
+                        if line != '\n':
+                           self.source_text.append(line)
+        else:
+            self.source_text = self.target_text
+
         self.post_editing_data["source"] = self.source_text
         self.post_editing_data["target"] = self.target_text
         self.table_offset_PostEdition = 0
-        self.table_rows_PostEdition = 5
-        self.table_rows_Differences = 5
+        self.table_rows_PostEdition = 100 #delete these vars if nav butons not used <<,>>,+,-
+        self.table_rows_Differences = 50
         self.table_offset_Differences = 0
         self.lastChangedSegmentIndex = -1
 
+        self.modified_references_indices =  []
+        self.modified_table_items_coordinates = []
+        self.lastChangedTableItemCoordinates = (-1,-1)
+        #CHECK WHICH OF THE FOLLOWING SHOULD BE CLEARED 
+        #TO SHOW DIFFERENCES CORRECTLY AFTER REOADING FILES FOR PE 
+        #AGREGAR LIMPIAR BUSQEUDAS       
+        self.saved_modified_references = []
+        self.differences = None
+        #self.post_editing_data = {}
+        self.differences_data = {}
+        self.unmodified_target = []
+        self.modified_target = []
+        self.last_changed_item_in_post_edition = None
+        self.last_selected_search = None
+        self.log = {}
         self.update_table_PostEdition()
+        #THE FOLLOWING CODE CREATES A NICE SIMPLE TABLE WITH WRAPPED 
+        #TEXT IN THE CELLS, COULD BE USED AS REFERENCE TO REFACTOR CODE
+       #P self.table_post_editing.clear()
+        #Pfor y, key in enumerate(sorted(self.post_editing_data.keys())):            
+          #P  for x, item in enumerate(self.post_editing_data[key]):
+            #P    
+              #P  newitem = QTableWidgetItem(textwrap.fill(item, width=70))
+                #Pif key != "Post-edited":
+                  #P  newitem.setReadOnly(True)
+              
+              #P  self.table_post_editing.setItem(x, y, newitem)
+
+        #P self.table_post_editing.setTextElideMode(QtCore.Qt.ElideNone)
+        #P self.table_post_editing.resizeColumnsToContents()
+        #P self.table_post_editing.resizeRowsToContents()
+        #P self.table_post_editing.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)             
         self.PE_table_controls_groupBox.show()
         self.PE_search_groupBox.show()
+        self.table_post_editing.show()
 
     @pyqtSignature("QString")
     def on_edit_search_differences_textEdited(self,text):
@@ -169,11 +194,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.post_editing_data["source"] = self.source_text[start:end]
         self.post_editing_data["target"] = self.target_text[start:end]
         self.table_post_editing.set_post_editing_table_data(self.post_editing_data, self.btn_bilingual_post_edition.isChecked())
-
+        
         for y in  self.modified_references_indices:
             y -= start
             if y >= 0 and y < self.table_rows_PostEdition:
-                self.setTableRowGreen(y)
+                self.setTableRowGreen(y)  
 
     def setTableRowGreen(self,row_index):
         self.changeQTextEditColor(self.table_post_editing.cellWidget(row_index,0), QColor( 51, 255, 153,255))
@@ -181,31 +206,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.btn_bilingual_post_edition.isChecked():
             self.changeQTextEditColor(self.table_post_editing.cellWidget(row_index,2), QColor( 51, 255, 153,255))
 
-    def update_table_Differences(self):
-        start = self.table_offset_Differences
-        end = self.table_offset_Differences + + self.table_rows_Differences
-        self.differences_data["source"] = self.enriched_target_text_original[start:end]
-        self.differences_data["target"] = self.enriched_target_text_modified[start:end]
-        self.table_differences.set_differences_table_data(self.differences_data)
-
     def search_on_table_differences(self, text):
         self.search_table_differences.clear()
+        self.search_table_differences.setHorizontalHeaderLabels(QtCore.QString("Results;").split(";"))
+        self.search_table_differences.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)#P 
         text = str(text)
         self.search_buttons = []
         if self.differences_data["target"] and self.differences_data["source"]:
             column = 1
-            for index,segment in enumerate(self.differences_data["target"]):
+            for index,segment in enumerate(self.differences_data["source"]):
                 row = index
-                if text and text in segment:
+                if text and (text in segment):
                     self.search_buttons.append(QTextEdit())
                     tableItem = self.search_buttons[-1]
-                    tableItem.setFixedWidth(250)
+                    tableItem.setMaximumHeight(50)
                     tableItem.setText(segment)
                     tableItem.setReadOnly(True)
-                    tableItem.mousePressEvent = (lambda event= tableItem, tableItem= tableItem,x=row, y=column: self.show_selected_segment_from_search_differences(event, tableItem,x,y))
+                    tableItem.setMinimumHeight(50) 
+                    #Following events not available as insertion/deletion function implemetation changed
+                    #tableItem.mousePressEvent = (lambda event= tableItem, tableItem= tableItem,x=row, y=column: self.show_selected_segment_from_search_differences(event, tableItem,x,y))
                     self.search_table_differences.setCellWidget(len(self.search_buttons)-1,0, tableItem)
+        self.search_table_differences.setTextElideMode(QtCore.Qt.ElideNone)
+        self.search_table_differences.resizeRowsToContents()
+        self.search_table_differences.resizeColumnsToContents()#P
+        self.search_table_differences.show()
+
     def search_on_table_post_editing(self, text):
         self.search_table_post_editing.clear()
+        self.search_table_post_editing.setHorizontalHeaderLabels(QtCore.QString("Results;").split(";"))
+        self.search_table_post_editing.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)#P  
         text = str(text)
         self.search_buttons = []
         if self.target_text:
@@ -213,13 +242,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for index,segment in enumerate(self.target_text):
                 row = index
                 if text and text in segment:
+                   
                     self.search_buttons.append(QTextEdit())
                     tableItem = self.search_buttons[-1]
-                    tableItem.setFixedWidth(250)
+                    #tableItem.setFixedWidth(250)
+                    tableItem.setMaximumHeight(50)
                     tableItem.setText(segment)
                     tableItem.setReadOnly(True)
                     tableItem.mousePressEvent = (lambda event= tableItem, tableItem= tableItem,x=row, y=column: self.show_selected_segment_from_search_post_editing(event, tableItem,x,y))
                     self.search_table_post_editing.setCellWidget(len(self.search_buttons)-1,0, tableItem)
+        self.search_table_post_editing.setTextElideMode(QtCore.Qt.ElideNone)
+        self.search_table_post_editing.resizeRowsToContents()
+        self.search_table_post_editing.resizeColumnsToContents()#P
+        self.search_table_post_editing.show()
+       
 
     @pyqtSignature("")
     def show_selected_segment_from_search_differences(self, event, tableItem, x, y):
@@ -245,41 +281,44 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSignature("")
     def on_btnDiff_clicked(self):
-        self.save();
+        self.save_using_log();
         self.tabWidget.setTabEnabled(5,True)
         self.tabWidget.setCurrentIndex(5)
         self.get_modified_and_unmodified_target()
-        self.differences = Differences(self.unmodified_target, self.modified_target)
-        self.enriched_target_text_original,self.enriched_target_text_modified = self.differences.get_enriched_text()
-        self.showDiffs()
+        self.differences = Differences(self.unmodified_target, self.modified_target) 
+        self.differences_data["source"], self.differences_data["target"] = self.differences.get_insertion_and_deletions(self.unmodified_target, self.modified_target)
+        self.table_differences.set_differences_table_data(self.differences_data)
 
-    @pyqtSignature("")
-    def on_btnStats_clicked(self):
-        self.save();
+        self.btnNextDifferences.show()
+        self.btnBackDifferences.show()
+        self.btnAddRowsDifferences.show()
+        self.btnLessRowsDifferences.show()
+        self.table_differences.show()
 
-        self.statistics = Statistics(self.unmodified_target, self.modified_target, self.output_directory)
-        insertions =  self.statistics.calculate_insertions_per_segment()[0]
-        deletions = self.statistics.calculate_deletions_per_segment()[0]
+    def update_table_Differences(self):
+        start = self.table_offset_Differences
+        end = self.table_offset_Differences + + self.table_rows_Differences
+        self.differences_data["source"] = self.enriched_target_text_original[start:end]
+        self.differences_data["target"] = self.enriched_target_text_modified[start:end]
+        self.table_differences.set_differences_table_data(self.differences_data)
 
-        if not (hasattr(self,'toggled_statistics_menu')):
-            self.toggled_statistics_menu = True
-        else: self.toggled_statistics_menu = not self.toggled_statistics_menu
-        if self.toggled_statistics_menu:
-            self.btnFirstStat.show()
-            if insertions:self.btnInsertionsStat.show()
-            if deletions:self.btnDeletionsStat.show()
-        else:
-            self.btnFirstStat.hide()
-            self.btnInsertionsStat.hide()
-            self.btnDeletionsStat.hide()
+    def showDiffs(self):
+        self.table_offset_Differences = 0
+        #self.update_table_Differences() 
+        self.btnNextDifferences.show()
+        self.btnBackDifferences.show()
+        self.btnAddRowsDifferences.show()
+        self.btnLessRowsDifferences.show()
+        self.table_differences.show()
 
     def load_log(self):
         log = {}
-        log_filepath = os.path.abspath(self.output_directory + "/log.json")
+        log_filepath = os.path.abspath(str(self.edit_output_post_editing.text() + "/log.json"))
         try:
             with open(log_filepath) as json_data:
                 log = json.load(json_data)
-        except:pass
+        except:
+            pass
         return log
 
     def get_latest_modifications (self):
@@ -306,51 +345,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.modified_target.append(line)
 
     @pyqtSignature("")
-    def on_btnFirstStat_clicked(self):
-        self.save_using_log()
-        self.get_modified_and_unmodified_target()
-        self.statistics = Statistics(self.unmodified_target, self.modified_target, self.output_directory)
-        self.statistics.calculate_statistics("time_per_segment")
-        self.HTMLview.setUrl(QUrl("statistics/generated/time_per_segment.html"));
-        self.HTMLview.show()
-        self.tabWidget.setTabEnabled(6,True)
-        self.tabWidget.setCurrentIndex(6)
-
-    @pyqtSignature("")
-    def on_btnInsertionsStat_clicked(self):
-        self.save_using_log()
-        self.get_modified_and_unmodified_target()
-        self.statistics = Statistics(self.unmodified_target, self.modified_target, self.output_directory)
-        self.statistics.calculate_statistics("insertions")
-        self.HTMLview.setUrl(QUrl("statistics/generated/insertions.html"));
-        self.HTMLview.show()
-        self.tabWidget.setTabEnabled(6,True)
-        self.tabWidget.setCurrentIndex(6)
-
-    @pyqtSignature("")
-    def on_btnDeletionsStat_clicked(self):
-        self.save_using_log()
-        self.get_modified_and_unmodified_target()
-        self.statistics = Statistics(self.unmodified_target, self.modified_target, self.output_directory)
-        self.statistics.calculate_statistics("deletions")
-        self.HTMLview.setUrl(QUrl("statistics/generated/deletions.html"));
-        self.HTMLview.show()
-        self.tabWidget.setTabEnabled(6,True)
-        self.tabWidget.setCurrentIndex(6)
-
-    def save(self):
+    def on_btnSave_clicked(self):
         self.original_target_path = str(self.edit_target_post_editing.text())
         target_filename = self.original_target_path[self.original_target_path.rfind('/'):]
-
         unmodified_target = self.edit_target_post_editing.text()
-        shutil.copy2(unmodified_target, str(self.output_directory + target_filename))
         self.save_using_log()
         self.get_modified_and_unmodified_target()
-
-    @pyqtSignature("")
-    def on_btnSave_clicked(self):
-        self.save()
-        self.PE_save_groupBox.hide()
 
     @pyqtSignature("")
     def on_btnNextPostEditing_clicked(self):
@@ -421,6 +421,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.edit_search_post_editing.show()
         else:
             self.toggled_search_post_editing = True
+            self.table_offset_PostEdition= 0
+            self.update_table_PostEdition()
             self.search_table_post_editing.hide()
             self.edit_search_post_editing.hide()
 
@@ -464,15 +466,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             doAlert("Please choose an output directory first.")
             return
 
-        checkbox_indexes = [False] * 8 #checkbox_indexes["WER","PER","HTER", "GTM", "BLEU","BLEU2GRAM","BLEU3GRAM"]
-        checkbox_indexes[0] = self.btn_check_WER.isChecked()
-        checkbox_indexes[1] = self.btn_check_PER.isChecked()
-        checkbox_indexes[2] = self.btn_check_HTER.isChecked()
-        checkbox_indexes[3] = self.btn_check_GTM.isChecked()
-        checkbox_indexes[4] = self.btn_check_BLEU.isChecked()
-        checkbox_indexes[5] = self.btn_check_BLEU2GRAM.isChecked()
-        checkbox_indexes[6] = self.btn_check_BLEU3GRAM.isChecked()
-        checkbox_indexes[7] = self.btn_check_BLEU4GRAM.isChecked()
+        checkbox_indexes =[]#[False] * 8 #checkbox_indexes["WER","PER","HTER", "GTM", "BLEU","BLEU2GRAM","BLEU3GRAM"]
+        checkbox_indexes.append(self.btn_check_WER.isChecked())
+        checkbox_indexes.append(self.btn_check_PER.isChecked())
+        checkbox_indexes.append(self.btn_check_HTER.isChecked())
+        checkbox_indexes.append(self.btn_check_GTM.isChecked())
+        checkbox_indexes.append(self.btn_check_BLEU.isChecked())
+        checkbox_indexes.append(self.btn_check_BLEU2GRAM.isChecked())
+        checkbox_indexes.append(self.btn_check_BLEU3GRAM.isChecked())
+        checkbox_indexes.append(self.btn_check_BLEU4GRAM.isChecked())
 
         text = self.migrated_backend_main._evaluate(checkbox_indexes, source, target)
         self.results_evaluation.setText(text)
@@ -537,10 +539,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Slot documentation goes here.
         """
-        self.output_directory = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-        self.edit_output_post_editing.setText(self.output_directory)
-        self.edit_output_evaluation_tab.setText(self.output_directory)
-
+        self.edit_output_evaluation_tab.setText(str(self.directoryDialog()))
+       
     @pyqtSignature("")
     def on_btn_source_machine_translation_tab_clicked(self):
         """
@@ -577,14 +577,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if dialog.exec_():
             self.edit_target_post_editing.setText(dialog.selectedFiles()[0])
 
+    def directoryDialog(self):
+        dialog = QFileDialog(self)
+        dialog.setFileMode(QFileDialog.DirectoryOnly)
+        dialog.setViewMode(QFileDialog.Detail)
+        if dialog.exec_():
+            return(dialog.selectedFiles()[0])
+        #else:
+        #   return os.pathdirname(os.path.abspath(__file__))
+
     @pyqtSignature("")
     def on_btn_output_post_editing_clicked(self):
         """
         Slot documentation goes here.
-        """
-        self.output_directory = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-        self.edit_output_post_editing.setText(self.output_directory)
-        self.edit_output_evaluation_tab.setText(self.output_directory)
+        """        
+        self.edit_output_post_editing.setText(str(self.directoryDialog()))
+       
 
     @pyqtSignature("")
     def on_btn_lm_text_preprocessing_tab_clicked(self):
@@ -597,6 +605,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         dialog.setViewMode(QFileDialog.Detail)
         if dialog.exec_():
             self.edit_lm_text_preprocessing_tab.setText(dialog.selectedFiles()[0])
+
     @pyqtSignature("")
     def on_btn_source_preprocessing_tab_clicked(self):
         """
@@ -626,7 +635,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Slot documentation goes here.
         """
-        self.edit_output_preprocessing_tab.setText(str(QFileDialog.getExistingDirectory(self, "Select Directory")))
+        self.edit_output_preprocessing_tab.setText(str(self.directoryDialog()))
+        #self.edit_output_preprocessing_tab.setText(str(QFileDialog.getExistingDirectory(self, "Select Directory")))
 
     @pyqtSignature("")
     def on_btnTranslate_clicked(self):
@@ -652,6 +662,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         except Exception, e:
             print >> sys.stderr, str(e)
             doAlert("Translation failed!")
+        
         self.btnTranslate.setEnabled(True)
         self.btnTranslate.setFocus()
 
@@ -677,19 +688,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_tableItemDifferencestextChanged(self, tableItem, x, y):
         pass
+
     def on_tableItemPostEditing_textChanged(self, tableItem, row_index,column_index):
         row_index += self.table_offset_PostEdition
         self.last_change_timestamp = int(time.time() * 1000)
         self.modified_table_items_coordinates.append((row_index,0))
         self.modified_table_items_coordinates.append((row_index,1))
         self.modified_table_items_coordinates.append((row_index,2))
-        self.setTableRowGreen(row_index)
         self.PE_diff_and_stats_groupBox.show()
         self.PE_save_groupBox.show()
         self.target_text[row_index] = (str(tableItem.toPlainText().toUtf8())).decode('utf8')
-
-        if self.btn_check_autosave.isChecked() and row_index != self.lastChangedSegmentIndex:
-            self.save()
         self.lastChangedSegmentIndex = row_index
         if row_index not in self.modified_references_indices:
             self.modified_references_indices.append(row_index)
@@ -701,14 +709,5 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if self.last_change_timestamp not in self.log:
                 self.log[self.last_change_timestamp] = {}
             self.log[self.last_change_timestamp][modified_reference_index] = modified_segment
-        with open(self.output_directory + "/log.json", 'w') as outfile:
+        with open(self.edit_output_post_editing.text() + "/log.json", 'w+') as outfile: #CHANGED OUTPUT_DIR
             json.dump(self.log, outfile)
-
-
-    @pyqtSignature("QString")
-    def on_labelInfo_linkActivated(self, link):
-        """
-        Slot documentation goes here.
-        """
-        dialog = DlgCredits(self)
-        dialog.exec_()

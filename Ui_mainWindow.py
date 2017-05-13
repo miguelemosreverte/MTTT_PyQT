@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\work\eric4workspace\MosesGUI\mainWindow.ui'
-#
-# Created: Thu Jul 11 13:38:46 2013
-#      by: PyQt4 UI code generator 4.10.2
-#
-# WARNING! All changes made in this file will be lost!
+# MTTT UI design
+# Work in progress, inmense room for improvement ;-)
+# Authors: MLemos, PEstrella
+# 
 
 from PyQt4 import QtCore, QtGui
 from table import MyTable
-
+from constants import languages
 import sys
 from PyQt4.QtCore import QSize, Qt
 from PyQt4.QtGui import *
@@ -28,9 +26,7 @@ def _translate(context, text, disambig):
 class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow):
-        self.modified_table_items_coordinates = []
-        self.lastChangedTableItemCoordinates = (-1,-1)
-
+       
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(705, 491)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
@@ -38,8 +34,8 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
         MainWindow.setSizePolicy(sizePolicy)
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/icon/moses.ico")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon = QtGui.QIcon(":/icon/mttt.png")
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/icon/mttt.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
         MainWindow.setLayoutDirection(QtCore.Qt.LeftToRight)
         MainWindow.setLocale(QtCore.QLocale(QtCore.QLocale.English, QtCore.QLocale.UnitedKingdom))
@@ -64,7 +60,6 @@ class Ui_MainWindow(object):
         self.initialize_training_tab()
         self.initialize_tab_evaluation()
         self.initialize_post_editing_tab()
-        self.initialize_tab_statistics()
         self.initialize_tab_differences()
 
 
@@ -74,8 +69,6 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.tab_evaluation, _fromUtf8(""))
         self.tabWidget.addTab(self.tab_post_editing, _fromUtf8(""))
         self.tabWidget.addTab(self.tab_differences, _fromUtf8(""))
-        self.tabWidget.addTab(self.tab_statistics, _fromUtf8(""))
-
 
         verticalLayout.addWidget(self.tabWidget)
         self.labelInfo = QtGui.QLabel(self.centralWidget)
@@ -128,11 +121,14 @@ class Ui_MainWindow(object):
         splitter.setOrientation(QtCore.Qt.Horizontal)
         splitter.setObjectName(_fromUtf8("splitter"))
 
-        self.table_differences= MyTable({'col1':[], 'col2':[]},self.on_tableItemDifferencestextChanged,self.on_tableItemDifferences_selected,5,2)
+        self.table_differences= MyTable({'col1':[], 'col2':[]},self.on_tableItemDifferencestextChanged,self.on_tableItemDifferences_selected,100,2)
         splitter.addWidget(self.table_differences)
+        self.table_differences.hide()
         verticalLayout_2.addWidget(splitter)
 
-        self.search_table_differences= MyTable({'Search Results':[]},self.on_tableItemDifferencestextChanged,self.on_tableItemDifferences_selected,5,1)
+        self.search_table_differences= MyTable({'Search Results':[]},self.on_tableItemDifferencestextChanged,self.on_tableItemDifferences_selected,10,1)
+        self.search_table_differences.setHorizontalHeaderLabels(QtCore.QString("Results;").split(";"))
+        self.search_table_differences.hide()
         splitter.addWidget(self.search_table_differences)
 
         self.btnBackDifferences = QtGui.QPushButton(DIFF_table_controls_groupBox)
@@ -188,32 +184,6 @@ class Ui_MainWindow(object):
         self.toggled_search_differences = True
         self.search_table_differences.hide()
         self.edit_search_differences.hide()
-
-
-    def initialize_tab_statistics(self):
-        self.tab_statistics = QtGui.QWidget()
-        self.tab_statistics.setAutoFillBackground(True)
-        self.tab_statistics.setPalette(self.background_color_palette)
-        self.tab_statistics.setObjectName(_fromUtf8("tab_statistics"))
-        verticalLayout_2 = QtGui.QVBoxLayout(self.tab_statistics)
-        verticalLayout_2.setObjectName(_fromUtf8("verticalLayout_2"))
-        splitter = QtGui.QSplitter(self.tab_statistics)
-        splitter.setOrientation(QtCore.Qt.Horizontal)
-        splitter.setObjectName(_fromUtf8("splitter"))
-        verticalLayout_2.addWidget(splitter)
-        verticalLayout_2.setStretch(0, 2)
-        verticalLayout_2.setStretch(1, 8)
-        self.tab_statistics.setAutoFillBackground(True)
-        self.tab_statistics.setObjectName(_fromUtf8("tab_statistics"))
-        self.HTMLview = QWebView(splitter)
-
-        self.label_source_evaluation_tab.setText(_translate("MainWindow", "Source text", None))
-        self.btn_source_evaluation_tab.setText(_translate("Dialog", "...", None))
-        self.label_target_evaluation_tab.setText(_translate("MainWindow", "Target text", None))
-        self.btn_target_evaluation_tab.setText(_translate("Dialog", "...", None))
-        self.label_output_dir_evaluation_tab.setText(_translate("MainWindow", "Output Directory", None))
-        self.btn_output_dir_evaluation_tab.setText(_translate("Dialog", "...", None))
-        self.btnEvaluation.setText(_translate("MainWindow", "Start Evaluation", None))
 
     def initialize_tab_evaluation(self):
         self.tab_evaluation = QtGui.QWidget()
@@ -347,10 +317,6 @@ class Ui_MainWindow(object):
         self.btn_check_BLEU4GRAM.setObjectName(_fromUtf8("btn_check_BLEU4GRAM"))
         gridLayout.addWidget(self.btn_check_BLEU4GRAM, 2, 8, 1, 1)
 
-        self.label_evaluation_checkboxes_explanation = QtGui.QLabel(groupBox_evaluation)
-        self.label_evaluation_checkboxes_explanation.setObjectName(_fromUtf8("label_evaluation_checkboxes_explanation"))
-        self.label_evaluation_checkboxes_explanation.setText("*BLUE returns the average of all the BLUE tests,\n and BLUE2 means BLUE2GRAM")
-        gridLayout.addWidget(self.label_evaluation_checkboxes_explanation, 3, 5, 1, 4)
 
         self.label_source_evaluation_tab.setText(_translate("MainWindow", "Source text", None))
         self.btn_source_evaluation_tab.setText(_translate("Dialog", "...", None))
@@ -409,22 +375,22 @@ class Ui_MainWindow(object):
         gridLayout.addWidget(self.btnMachineTranslation, 2, 1, 1, 3)
 
 
-        #btnChooseLM
-        self.btnChooseLM = QtGui.QPushButton(groupBox)
-        self.btnChooseLM.setEnabled(True)
-        self.btnChooseLM.setMinimumSize(QtCore.QSize(120, 60))
-        self.btnChooseLM.setFlat(False)
-        self.btnChooseLM.setObjectName(_fromUtf8("btnChooseLM"))
-        self.btnChooseLM.setText(_translate("MainWindow", "Choose a Model", None))
-        gridLayout.addWidget(self.btnChooseLM, 1, 4, 2, 1)
-        #btnCreateLM
-        self.btnCreateLM = QtGui.QPushButton(groupBox)
-        self.btnCreateLM.setEnabled(True)
-        self.btnCreateLM.setMinimumSize(QtCore.QSize(120, 60))
-        self.btnCreateLM.setFlat(False)
-        self.btnCreateLM.setObjectName(_fromUtf8("btnCreateLM"))
-        self.btnCreateLM.setText(_translate("MainWindow", "Create a Model", None))
-        gridLayout.addWidget(self.btnCreateLM, 1, 5, 2, 1)
+        #btnChooseTM ---> pre-trained translation model
+        self.btnChooseTM = QtGui.QPushButton(groupBox)
+        self.btnChooseTM.setEnabled(True)
+        self.btnChooseTM.setMinimumSize(QtCore.QSize(120, 60))
+        self.btnChooseTM.setFlat(False)
+        self.btnChooseTM.setObjectName(_fromUtf8("btnChooseTM"))
+        self.btnChooseTM.setText(_translate("MainWindow", "Choose a Model", None))
+        gridLayout.addWidget(self.btnChooseTM, 1, 4, 2, 1)
+        #btnCreateTM
+        self.btnCreateTM = QtGui.QPushButton(groupBox)
+        self.btnCreateTM.setEnabled(True)
+        self.btnCreateTM.setMinimumSize(QtCore.QSize(120, 60))
+        self.btnCreateTM.setFlat(False)
+        self.btnCreateTM.setObjectName(_fromUtf8("btnCreateTM"))
+        self.btnCreateTM.setText(_translate("MainWindow", "Create a Model", None))
+        gridLayout.addWidget(self.btnCreateTM, 1, 5, 2, 1)
 
         self.label_source_machine_translation_tab.setText(_translate("MainWindow", "Source text", None))
         self.btn_source_machine_translation_tab.setText(_translate("Dialog", "...", None))
@@ -453,7 +419,6 @@ class Ui_MainWindow(object):
         post_editing_files_settings_groupBox = QtGui.QGroupBox(groupBox)
         post_editing_files_settings_groupBox.setObjectName(_fromUtf8("post_editing_files_settings_groupBox"))
         post_editing_files_settings_groupBox.setMaximumSize((QtCore.QSize(1000, 250)))
-        #post_editing_files_settings_groupBox.setTitle(_translate("MainWindow", "Languages", None))
         PE_files_gridLayout = QtGui.QGridLayout(post_editing_files_settings_groupBox)
         PE_files_gridLayout.setObjectName(_fromUtf8("PE_files_gridLayout"))
         gridLayout.addWidget(post_editing_files_settings_groupBox, 1, 0, 2, 1)
@@ -574,42 +539,8 @@ class Ui_MainWindow(object):
         self.btnDiff.setObjectName(_fromUtf8("btnDiff"))
         gridLayout4.addWidget(self.btnDiff, 1, 4, 1, 1)
 
-        self.btnStats = QtGui.QPushButton(groupBox)
-        self.btnStats.setEnabled(True)
-        self.btnStats.setMaximumSize(QtCore.QSize(130, 30))
-        self.btnStats.setFlat(False)
-        self.btnStats.setText(_translate("Dialog", "See stats", None))
-        self.btnStats.setObjectName(_fromUtf8("btnStats"))
-        gridLayout4.addWidget(self.btnStats, 1, 5, 1, 1)
-
-
-        self.btnFirstStat = QtGui.QPushButton(groupBox)
-        self.btnFirstStat.setEnabled(True)
-        self.btnFirstStat.setMaximumSize(QtCore.QSize(130, 30))
-        self.btnFirstStat.setFlat(False)
-        self.btnFirstStat.setText(_translate("Dialog", "Time per Segment", None))
-        self.btnFirstStat.setObjectName(_fromUtf8("btnFirstStat"))
-        gridLayout4.addWidget(self.btnFirstStat, 3, 5, 1, 1)
-        self.btnFirstStat.hide()
-
-        self.btnInsertionsStat = QtGui.QPushButton(groupBox)
-        self.btnInsertionsStat.setEnabled(True)
-        self.btnInsertionsStat.setMaximumSize(QtCore.QSize(130, 30))
-        self.btnInsertionsStat.setFlat(False)
-        self.btnInsertionsStat.setText(_translate("Dialog", "Insertions", None))
-        self.btnInsertionsStat.setObjectName(_fromUtf8("btnInsertionsStat"))
-        gridLayout4.addWidget(self.btnInsertionsStat, 4, 5, 1, 1)
-        self.btnInsertionsStat.hide()
-
-        self.btnDeletionsStat = QtGui.QPushButton(groupBox)
-        self.btnDeletionsStat.setEnabled(True)
-        self.btnDeletionsStat.setMaximumSize(QtCore.QSize(130, 30))
-        self.btnDeletionsStat.setFlat(False)
-        self.btnDeletionsStat.setText(_translate("Dialog", "Deletions", None))
-        self.btnDeletionsStat.setObjectName(_fromUtf8("btnDeletionsStat"))
-        gridLayout4.addWidget(self.btnDeletionsStat, 5, 5, 1, 1)
-        self.btnDeletionsStat.hide()
-
+       
+        #SAVE TO FILE TO RECOVER LATER AND GET DIFF AND STATS
         self.PE_save_groupBox = QtGui.QGroupBox(groupBox)
         self.PE_save_groupBox.setObjectName(_fromUtf8("PE_save_groupBox"))
         self.PE_save_groupBox.setMinimumSize((QtCore.QSize(120, 80)))
@@ -625,13 +556,7 @@ class Ui_MainWindow(object):
         self.btnSave.setText(_translate("Dialog", "Save", None))
         self.btnSave.setObjectName(_fromUtf8("btnSave"))
         gridLayout5.addWidget(self.btnSave, 1,1, 1, 1)
-        self.btn_check_autosave = QtGui.QCheckBox(groupBox)
-        self.btn_check_autosave.setEnabled(True)
-        self.btn_check_autosave.setText("Autosave")
-        self.btn_check_autosave.setMinimumSize(QtCore.QSize(5, 5))
-        self.btn_check_autosave.setObjectName(_fromUtf8("btn_check_autosave"))
-        gridLayout5.addWidget(self.btn_check_autosave, 2,1, 1, 1)
-
+       
 
         self.PE_search_groupBox = QtGui.QGroupBox(groupBox)
         self.PE_search_groupBox.setObjectName(_fromUtf8("self.PE_search_groupBox"))
@@ -655,22 +580,22 @@ class Ui_MainWindow(object):
         self.toggled_search_post_editing = True
         self.edit_search_post_editing.hide()
 
-
-
-
-
         verticalLayout_2.addWidget(groupBox)
         splitter = QtGui.QSplitter(self.tab_post_editing)
         splitter.setOrientation(QtCore.Qt.Horizontal)
         splitter.setObjectName(_fromUtf8("splitter"))
 
-
-        self.table_post_editing= MyTable({'col1':[], 'col2':[]},self.on_tableItemPostEditing_textChanged,self.on_tableItemPostEdition_selected,5,3)
+        self.table_post_editing= MyTable({'col1':[], 'col2':[]},self.on_tableItemPostEditing_textChanged,self.on_tableItemPostEdition_selected,100,3)
+        #PQtGui.QTableWidget()#
+        #Pself.table_post_editing.resize(400, 250)
+        #Pself.table_post_editing.setRowCount(100)
+        #Pself.table_post_editing.setColumnCount(2)        
         self.table_post_editing.hide()
         splitter.addWidget(self.table_post_editing)
         verticalLayout_2.addWidget(splitter)
 
-        self.search_table_post_editing= MyTable({'Search Results ':[]},self.on_tableItemPostEditing_textChanged,self.on_tableItemPostEdition_selected,5,1)
+        self.search_table_post_editing= MyTable({'Search Results ':[]},self.on_tableItemPostEditing_textChanged,self.on_tableItemPostEdition_selected,10,1)
+        self.search_table_post_editing.setHorizontalHeaderLabels(QtCore.QString("Results;").split(";"))
         self.search_table_post_editing.hide()
         splitter.addWidget(self.search_table_post_editing)
 
@@ -679,7 +604,7 @@ class Ui_MainWindow(object):
 
         self.label_source_post_editing.setText(_translate("MainWindow", "Source text", None))
         self.btn_source_post_editing.setText(_translate("Dialog", "...", None))
-        self.label_target_post_editing.setText(_translate("MainWindow", "MT text", None))
+        self.label_target_post_editing.setText(_translate("MainWindow", "MT", None))
         self.btn_target_post_editing.setText(_translate("Dialog", "...", None))
         self.label_output_post_editing.setText(_translate("MainWindow", "Output Directory", None))
         self.btn_output_post_editing.setText(_translate("Dialog", "...", None))
@@ -744,23 +669,23 @@ class Ui_MainWindow(object):
 
 
         #btn_choose_source_lang_preprocessing
-        self.btn_choose_source_lang_preprocessing = QtGui.QPushButton('Source Language')
-        menu = QtGui.QMenu()
-        menu.addAction('EN', lambda: self.choose_language("preprocessing","source",'EN'))
-        menu.addAction('FR', lambda: self.choose_language("preprocessing","source",'FR'))
-        menu.addAction('DE', lambda: self.choose_language("preprocessing","source",'DE'))
-        self.preprocessing_source_language = ""
-        self.btn_choose_source_lang_preprocessing.setMenu(menu)
-        languages_gridLayout.addWidget(self.btn_choose_source_lang_preprocessing, 1, 0, 1, 1)
-        #btn_choose_target_lang_preprocessing
-        self.btn_choose_target_lang_preprocessing = QtGui.QPushButton('Target Language')
-        menu = QtGui.QMenu()
-        menu.addAction('EN', lambda: self.choose_language("preprocessing","target",'EN'))
-        menu.addAction('FR', lambda: self.choose_language("preprocessing","target",'FR'))
-        menu.addAction('DE', lambda: self.choose_language("preprocessing","target",'DE'))
-        self.preprocessing_target_language = ""
-        self.btn_choose_target_lang_preprocessing.setMenu(menu)
-        languages_gridLayout.addWidget(self.btn_choose_target_lang_preprocessing, 2, 0, 1, 1)
+        self.comboSrc = QtGui.QComboBox(self)
+        for x in languages:
+            self.comboSrc.addItem(x)
+        self.comboSrc.activated[str].connect(self.onActivatedSrc)
+        self.srcLabel = QLabel("Source")
+        languages_gridLayout.addWidget(self.comboSrc, 1, 1, 1, 1)
+        languages_gridLayout.addWidget(self.srcLabel, 1, 0, 1, 1)
+
+        #btn_choose_source_lang_preprocessing
+        self.tgtLabel = QLabel("Target")
+        self.comboTgt = QtGui.QComboBox(self)
+        for x in languages:
+            self.comboTgt.addItem(x)
+        self.comboTgt.activated[str].connect(self.onActivatedTgt)
+        languages_gridLayout.addWidget(self.comboTgt, 2, 1, 1, 1)
+        languages_gridLayout.addWidget(self.tgtLabel, 2, 0, 1, 1)
+
 
         #label_source_preprocessing_tab
         self.label_source_preprocessing_tab = QtGui.QLabel(groupBox)
@@ -846,11 +771,17 @@ class Ui_MainWindow(object):
         self.btn_source_preprocessing_tab.setText(_translate("Dialog", "...", None))
         self.label_target_preprocessing_tab.setText(_translate("MainWindow", "Target text", None))
         self.btn_target_preprocessing_tab.setText(_translate("Dialog", "...", None))
-        self.label_lm_text_preprocessing_tab.setText(_translate("MainWindow", "Language Model", None))
+        self.label_lm_text_preprocessing_tab.setText(_translate("MainWindow", "Text (target lang)", None))
         self.btn_lm_text_preprocessing_tab.setText(_translate("Dialog", "...", None))
         self.label_output_dir_preprocessing_tab.setText(_translate("MainWindow", "Output Directory", None))
         self.btn_output_dir_preprocessing_tab.setText(_translate("Dialog", "...", None))
         self.btnPreProccess.setText(_translate("MainWindow", "Start corpus preprocessing", None))
+
+    def onActivatedSrc(self, text):      
+        self.choose_language("preprocessing","source",text)
+
+    def onActivatedTgt(self, text):      
+        self.choose_language("preprocessing","target",text)
 
     def initialize_training_tab(self):
         self.tab_training = QtGui.QWidget()
@@ -887,17 +818,15 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "Translators Training Tool", None))
 
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_corpus_preparation), _translate("MainWindow", "Corpus Preparation", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_training), _translate("MainWindow", "Training", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_corpus_preparation), _translate("MainWindow", "Corpus/LM Preparation", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_training), _translate("MainWindow", "MT Training", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_evaluation), _translate("MainWindow", "Evaluation", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_machine_translation), _translate("MainWindow", "Machine Translation", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_post_editing), _translate("MainWindow", "Post Edition", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_post_editing), _translate("MainWindow", "Post-Editing", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_differences), _translate("MainWindow", "Differences", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_statistics), _translate("MainWindow", "Statistics", None))
-
         self.tabWidget.setTabEnabled(5,False)
         self.tabWidget.setTabEnabled(6,False)
-        self.labelInfo.setText(_translate("MainWindow", "<qt><a href=\"www\">Credits and Support</a></qt>", None))
+       
 
 import icons_rc
 
