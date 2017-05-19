@@ -3,7 +3,7 @@
 # MTTT UI design
 # Work in progress, inmense room for improvement ;-)
 # Authors: MLemos, PEstrella
-# 
+#
 
 from PyQt4 import QtCore, QtGui
 from table import MyTable
@@ -26,7 +26,7 @@ def _translate(context, text, disambig):
 class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow):
-       
+
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(705, 491)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Preferred)
@@ -277,15 +277,6 @@ class Ui_MainWindow(object):
         self.btn_check_HTER.setText("HTER")
         self.btn_check_HTER.setObjectName(_fromUtf8("btn_check_HTER"))
         gridLayout.addWidget(self.btn_check_HTER, 1, 7, 1, 1)
-
-
-        self.btn_check_GTM = QtGui.QCheckBox(groupBox_evaluation)
-        self.btn_check_GTM.setEnabled(True)
-        self.btn_check_GTM.setText("GTM")
-        self.btn_check_GTM.setMinimumSize(QtCore.QSize(5, 5))
-        self.btn_check_GTM.setObjectName(_fromUtf8("btn_check_GTM"))
-        gridLayout.addWidget(self.btn_check_GTM, 1, 8, 1, 1)
-
 
         self.btn_check_BLEU = QtGui.QCheckBox(groupBox_evaluation)
         self.btn_check_BLEU.setEnabled(True)
@@ -539,7 +530,7 @@ class Ui_MainWindow(object):
         self.btnDiff.setObjectName(_fromUtf8("btnDiff"))
         gridLayout4.addWidget(self.btnDiff, 1, 4, 1, 1)
 
-       
+
         #SAVE TO FILE TO RECOVER LATER AND GET DIFF AND STATS
         self.PE_save_groupBox = QtGui.QGroupBox(groupBox)
         self.PE_save_groupBox.setObjectName(_fromUtf8("PE_save_groupBox"))
@@ -556,7 +547,7 @@ class Ui_MainWindow(object):
         self.btnSave.setText(_translate("Dialog", "Save", None))
         self.btnSave.setObjectName(_fromUtf8("btnSave"))
         gridLayout5.addWidget(self.btnSave, 1,1, 1, 1)
-       
+
 
         self.PE_search_groupBox = QtGui.QGroupBox(groupBox)
         self.PE_search_groupBox.setObjectName(_fromUtf8("self.PE_search_groupBox"))
@@ -589,7 +580,7 @@ class Ui_MainWindow(object):
         #PQtGui.QTableWidget()#
         #Pself.table_post_editing.resize(400, 250)
         #Pself.table_post_editing.setRowCount(100)
-        #Pself.table_post_editing.setColumnCount(2)        
+        #Pself.table_post_editing.setColumnCount(2)
         self.table_post_editing.hide()
         splitter.addWidget(self.table_post_editing)
         verticalLayout_2.addWidget(splitter)
@@ -777,10 +768,10 @@ class Ui_MainWindow(object):
         self.btn_output_dir_preprocessing_tab.setText(_translate("Dialog", "...", None))
         self.btnPreProccess.setText(_translate("MainWindow", "Start corpus preprocessing", None))
 
-    def onActivatedSrc(self, text):      
+    def onActivatedSrc(self, text):
         self.choose_language("preprocessing","source",text)
 
-    def onActivatedTgt(self, text):      
+    def onActivatedTgt(self, text):
         self.choose_language("preprocessing","target",text)
 
     def initialize_training_tab(self):
@@ -826,7 +817,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_differences), _translate("MainWindow", "Differences", None))
         self.tabWidget.setTabEnabled(5,False)
         self.tabWidget.setTabEnabled(6,False)
-       
+
 
 import icons_rc
 

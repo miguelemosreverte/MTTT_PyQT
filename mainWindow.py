@@ -3,7 +3,7 @@
 # MTTT UI implementation
 # Work in progress, inmense room for improvement ;-)
 # Authors: MLemos, PEstrella
-# 
+#
 import textwrap
 from PyQt4.QtCore import (
     pyqtSignature,
@@ -82,7 +82,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSignature("")
     def on_btnMachineTranslation_clicked(self):
-        
+
         source = self.edit_source_machine_translation_tab.text()
         if not source:
             doAlert("Please choose a source text first.")
@@ -93,7 +93,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSignature("")
     def on_btnChooseTM_clicked(self):
         #self.chooseModel= str(QFileDialog.getExistingDirectory(self, "Select Translation Model"))
-        self.chooseModel.setText(str(self.directoryDialog()))       
+        self.chooseModel.setText(str(self.directoryDialog()))
 
     @pyqtSignature("")
     def on_btnCreateTM_clicked(self):
@@ -115,8 +115,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not output:
             doAlert("Please choose an output directory first.")
             return
-       
-        
+
+
         self.source_text = []
         self.unchanged_target_text = []
         self.target_text = []
@@ -147,9 +147,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modified_references_indices =  []
         self.modified_table_items_coordinates = []
         self.lastChangedTableItemCoordinates = (-1,-1)
-        #CHECK WHICH OF THE FOLLOWING SHOULD BE CLEARED 
-        #TO SHOW DIFFERENCES CORRECTLY AFTER REOADING FILES FOR PE 
-        #AGREGAR LIMPIAR BUSQEUDAS       
+        #CHECK WHICH OF THE FOLLOWING SHOULD BE CLEARED
+        #TO SHOW DIFFERENCES CORRECTLY AFTER REOADING FILES FOR PE
+        #AGREGAR LIMPIAR BUSQEUDAS
         self.saved_modified_references = []
         self.differences = None
         #self.post_editing_data = {}
@@ -160,22 +160,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.last_selected_search = None
         self.log = {}
         self.update_table_PostEdition()
-        #THE FOLLOWING CODE CREATES A NICE SIMPLE TABLE WITH WRAPPED 
+        #THE FOLLOWING CODE CREATES A NICE SIMPLE TABLE WITH WRAPPED
         #TEXT IN THE CELLS, COULD BE USED AS REFERENCE TO REFACTOR CODE
        #P self.table_post_editing.clear()
-        #Pfor y, key in enumerate(sorted(self.post_editing_data.keys())):            
+        #Pfor y, key in enumerate(sorted(self.post_editing_data.keys())):
           #P  for x, item in enumerate(self.post_editing_data[key]):
-            #P    
+            #P
               #P  newitem = QTableWidgetItem(textwrap.fill(item, width=70))
                 #Pif key != "Post-edited":
                   #P  newitem.setReadOnly(True)
-              
+
               #P  self.table_post_editing.setItem(x, y, newitem)
 
         #P self.table_post_editing.setTextElideMode(QtCore.Qt.ElideNone)
         #P self.table_post_editing.resizeColumnsToContents()
         #P self.table_post_editing.resizeRowsToContents()
-        #P self.table_post_editing.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)             
+        #P self.table_post_editing.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)
         self.PE_table_controls_groupBox.show()
         self.PE_search_groupBox.show()
         self.table_post_editing.show()
@@ -194,11 +194,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.post_editing_data["source"] = self.source_text[start:end]
         self.post_editing_data["target"] = self.target_text[start:end]
         self.table_post_editing.set_post_editing_table_data(self.post_editing_data, self.btn_bilingual_post_edition.isChecked())
-        
+
         for y in  self.modified_references_indices:
             y -= start
             if y >= 0 and y < self.table_rows_PostEdition:
-                self.setTableRowGreen(y)  
+                self.setTableRowGreen(y)
 
     def setTableRowGreen(self,row_index):
         self.changeQTextEditColor(self.table_post_editing.cellWidget(row_index,0), QColor( 51, 255, 153,255))
@@ -209,7 +209,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def search_on_table_differences(self, text):
         self.search_table_differences.clear()
         self.search_table_differences.setHorizontalHeaderLabels(QtCore.QString("Results;").split(";"))
-        self.search_table_differences.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)#P 
+        self.search_table_differences.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)#P
         text = str(text)
         self.search_buttons = []
         if self.differences_data["target"] and self.differences_data["source"]:
@@ -222,7 +222,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     tableItem.setMaximumHeight(50)
                     tableItem.setText(segment)
                     tableItem.setReadOnly(True)
-                    tableItem.setMinimumHeight(50) 
+                    tableItem.setMinimumHeight(50)
                     #Following events not available as insertion/deletion function implemetation changed
                     #tableItem.mousePressEvent = (lambda event= tableItem, tableItem= tableItem,x=row, y=column: self.show_selected_segment_from_search_differences(event, tableItem,x,y))
                     self.search_table_differences.setCellWidget(len(self.search_buttons)-1,0, tableItem)
@@ -234,7 +234,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def search_on_table_post_editing(self, text):
         self.search_table_post_editing.clear()
         self.search_table_post_editing.setHorizontalHeaderLabels(QtCore.QString("Results;").split(";"))
-        self.search_table_post_editing.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)#P  
+        self.search_table_post_editing.horizontalHeader().setResizeMode(QtGui.QHeaderView.Stretch)#P
         text = str(text)
         self.search_buttons = []
         if self.target_text:
@@ -242,7 +242,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for index,segment in enumerate(self.target_text):
                 row = index
                 if text and text in segment:
-                   
+
                     self.search_buttons.append(QTextEdit())
                     tableItem = self.search_buttons[-1]
                     #tableItem.setFixedWidth(250)
@@ -255,7 +255,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.search_table_post_editing.resizeRowsToContents()
         self.search_table_post_editing.resizeColumnsToContents()#P
         self.search_table_post_editing.show()
-       
+
 
     @pyqtSignature("")
     def show_selected_segment_from_search_differences(self, event, tableItem, x, y):
@@ -285,7 +285,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabWidget.setTabEnabled(5,True)
         self.tabWidget.setCurrentIndex(5)
         self.get_modified_and_unmodified_target()
-        self.differences = Differences(self.unmodified_target, self.modified_target) 
+        self.differences = Differences(self.unmodified_target, self.modified_target)
         self.differences_data["source"], self.differences_data["target"] = self.differences.get_insertion_and_deletions(self.unmodified_target, self.modified_target)
         self.table_differences.set_differences_table_data(self.differences_data)
 
@@ -304,7 +304,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def showDiffs(self):
         self.table_offset_Differences = 0
-        #self.update_table_Differences() 
+        #self.update_table_Differences()
         self.btnNextDifferences.show()
         self.btnBackDifferences.show()
         self.btnAddRowsDifferences.show()
@@ -466,11 +466,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             doAlert("Please choose an output directory first.")
             return
 
-        checkbox_indexes =[]#[False] * 8 #checkbox_indexes["WER","PER","HTER", "GTM", "BLEU","BLEU2GRAM","BLEU3GRAM"]
+        checkbox_indexes =[]#[False] * 8 #checkbox_indexes["WER","PER","HTER", "BLEU","BLEU2GRAM","BLEU3GRAM"]
         checkbox_indexes.append(self.btn_check_WER.isChecked())
         checkbox_indexes.append(self.btn_check_PER.isChecked())
         checkbox_indexes.append(self.btn_check_HTER.isChecked())
-        checkbox_indexes.append(self.btn_check_GTM.isChecked())
         checkbox_indexes.append(self.btn_check_BLEU.isChecked())
         checkbox_indexes.append(self.btn_check_BLEU2GRAM.isChecked())
         checkbox_indexes.append(self.btn_check_BLEU3GRAM.isChecked())
@@ -540,7 +539,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Slot documentation goes here.
         """
         self.edit_output_evaluation_tab.setText(str(self.directoryDialog()))
-       
+
     @pyqtSignature("")
     def on_btn_source_machine_translation_tab_clicked(self):
         """
@@ -590,9 +589,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def on_btn_output_post_editing_clicked(self):
         """
         Slot documentation goes here.
-        """        
+        """
         self.edit_output_post_editing.setText(str(self.directoryDialog()))
-       
+
 
     @pyqtSignature("")
     def on_btn_lm_text_preprocessing_tab_clicked(self):
@@ -662,7 +661,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         except Exception, e:
             print >> sys.stderr, str(e)
             doAlert("Translation failed!")
-        
+
         self.btnTranslate.setEnabled(True)
         self.btnTranslate.setFocus()
 

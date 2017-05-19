@@ -23,36 +23,14 @@
 ##############################################################################
 import subprocess
 import os
-import platform
-
-def creation_date(path_to_file):
-    """
-    Try to get the date that a file was created, falling back to when it was
-    last modified if that isn't possible.
-    See http://stackoverflow.com/a/39501288/1709587 for explanation.
-    """
-    if platform.system() == 'Windows':
-        return os.path.getctime(path_to_file)
-    else:
-        stat = os.stat(path_to_file)
-        try:
-            return stat.st_birthtime
-        except AttributeError:
-            # We're probably on Linux. No easy way to get creation dates here,
-            # so we'll settle for when its content was last modified.
-            return stat.st_mtime
 
 def filterTER (lines):
     result = ''
-    warning = False
     lines = lines.splitlines()
     for line in lines:
         if "Total TER:" in line:
-            result += line.replace("Total TER:","")
-        if "Warning, Invalid line:" in line:
-            warning = True
-    if warning:
-        result += " There are lines unchanged from source to reference. HTER cannot work in those cases."
+            line = line.replace("Total TER:","").replace('\n','').replace('\r', '')
+            result += line.split("(")[0]
     return result + "\n"
 
 def filterBLEU (line, BLEU_type):
@@ -63,66 +41,46 @@ def filterBLEU (line, BLEU_type):
     line = line.replace('\n','').replace('\r', '')
     return line
 
-def filterGTM (line):
-    if "You should not be comparing equal runs" in line:
-        line = "There are lines unchanged from source to reference. GTM cannot work in those cases.\n"
-    return line
-
 def filter_output(proccess,method):
     out, err = proccess.communicate()
     final_text = ""
     if not err :
         final_text = out
     else: final_text = err
-    if method == "TER": final_text = filterTER(final_text)
+    if method == "HTER": final_text = filterTER(final_text)
     if method == "GTM": final_text = filterGTM(final_text)
-
+    if method == "PER" or method == "WER": pass
+    try:
+        final_text = str(round(float(final_text), 3))
+    except ValueError:
+        pass
     return final_text
 
-cached_results = {}
 
-def evaluate(checkbox_indexes, test, reference):
-    checkbox_indexes_constants = ["WER","PER","HTER", "GTM", "BLEU","BLEU2GRAM","BLEU3GRAM","BLEU4GRAM"]
+cached_results = {}
+def evaluate(checkbox_indexes, hypothesis, reference):
+    checkbox_indexes_constants = ["WER","PER","HTER", "BLEU","BLEU2GRAM","BLEU3GRAM","BLEU4GRAM"]
     DIRECTORY = os.path.abspath("evaluation_scripts") + "/"
-    TER_DIRECTORY = DIRECTORY + "tercom-0.7.25/tercom.7.25.jar"
-    GTM_DIRECTORY = DIRECTORY + "gtm-1.4/"
+    TER_DIRECTORY = DIRECTORY + "java_ter_060428 TERtest"
     EXEC_PERL = "perl "
     EXEC_JAVA = "java "
+
+    evaluation_scripts_commands = {}
+    evaluation_scripts_commands["WER"] = EXEC_PERL + DIRECTORY +  "WER" + ".pl" + " -t " + hypothesis + " -r " + reference
+    evaluation_scripts_commands["PER"] = EXEC_PERL + DIRECTORY +  "PER" + ".pl" + " -t " + hypothesis + " -r " + reference
+    evaluation_scripts_commands["HTER"] = EXEC_JAVA + "-cp " + TER_DIRECTORY + " " + hypothesis + " " + reference
+    evaluation_scripts_commands["BLEU"] = EXEC_PERL + DIRECTORY + "BLEU.pl " + reference +" < " + hypothesis
     return_results = ""
     checkbox_index = 0
     BLEU_cached_results = ""
     for checkbox in checkbox_indexes:
         if checkbox:
-            key = (test,creation_date(test),reference,creation_date(reference), checkbox_indexes_constants[checkbox_index])
+            key = checkbox_indexes_constants[checkbox_index]
             if key in cached_results: return_results += cached_results[key]
             else:
-                if checkbox_indexes_constants[checkbox_index] == "WER" or checkbox_indexes_constants[checkbox_index] == "PER":
-                    command = EXEC_PERL + DIRECTORY +  checkbox_indexes_constants[checkbox_index] + ".pl" + " -t " + test + " -r " + reference
-                    proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE)
-                    result = "\n" + checkbox_indexes_constants[checkbox_index] + "..... " + proc.stdout.read()
-                    return_results += result
-                    cached_results[key] =  result
-
-                if checkbox_indexes_constants[checkbox_index] == "HTER":
-                    command_2 = EXEC_JAVA + "-jar " + TER_DIRECTORY + " -r " + reference + " -h " + test
-                    proc = subprocess.Popen(command_2, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    result = "\n" + checkbox_indexes_constants[checkbox_index] + "....." + filter_output(proc,"TER")
-                    return_results += result
-                    cached_results[key] =  result
-
-
-                if checkbox_indexes_constants[checkbox_index] == "GTM":
-                    command_2 = EXEC_JAVA + "-cp " + GTM_DIRECTORY + " gtm" + " -t " +  test + " " + reference
-                    proc = subprocess.Popen(command_2, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    result = "\n" + checkbox_indexes_constants[checkbox_index] + "....." + filter_output(proc,"GTM")
-
-                    #out, err = proc.communicate()
-                    #result = "\n" + checkbox_indexes_constants[checkbox_index] + "....." + out + err
-                    return_results += result
-                    cached_results[key] =  result
 
                 if "BLEU" in checkbox_indexes_constants[checkbox_index] and BLEU_cached_results == "":
-                    command = EXEC_PERL + DIRECTORY + "BLEU.pl " + reference +" < " + test
+                    command = evaluation_scripts_commands["BLEU"]
                     proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     while True:
                       line = proc.stdout.readline()
@@ -135,7 +93,13 @@ def evaluate(checkbox_indexes, test, reference):
                     return_results += result
                     cached_results[key] =  result
 
+                else:
+                    command = evaluation_scripts_commands[checkbox_indexes_constants[checkbox_index]]
+                    proc = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    result = "\n" + checkbox_indexes_constants[checkbox_index] + "..... " + filter_output(proc,checkbox_indexes_constants[checkbox_index])
+                    return_results += result
+                    cached_results[key] =  result
+
 
         checkbox_index += 1
-    return_results
     return return_results
