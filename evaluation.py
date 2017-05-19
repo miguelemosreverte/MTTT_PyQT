@@ -22,7 +22,7 @@
 #
 ##############################################################################
 import subprocess
-import os
+import os,stat
 import platform
 
 def modification_date(path_to_file):
@@ -34,7 +34,7 @@ def modification_date(path_to_file):
     if platform.system() == 'Windows':
         return os.path.getmtime(path_to_file)
     else:
-        return stat.st_mtime
+        return stat.ST_MTIME
 
 def filterTER (lines):
     result = ''
@@ -87,7 +87,7 @@ def evaluate(checkbox_indexes, hypothesis, reference):
     BLEU_cached_results = ""
     for checkbox in checkbox_indexes:
         if checkbox:
-            key = (test,creation_date(test),reference,creation_date(reference), checkbox_indexes_constants[checkbox_index])
+            key = (hypothesis,modification_date(hypothesis),reference,modification_date(reference), checkbox_indexes_constants[checkbox_index])
             if key in cached_results: return_results += cached_results[key]
             else:
 
